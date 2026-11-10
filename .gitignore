@@ -1,0 +1,19 @@
+# sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# logs e temporários
+*.log
+tmp/
+.cache/
+
+# ambiente
+.env
+.env.*
+node_modules/
+.vercel
+
+# editores
+.vscode/
+.idea/
