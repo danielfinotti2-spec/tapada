@@ -204,6 +204,7 @@
     const leagues = DATA();
     const wrap = el('div', { class: 'car-page' });
     wrap.appendChild(el('div', { class: 'car-head' }, [
+      el('img', { class: 'car-nota', src: './img/nota-sem-fundo.png', alt: 'Nota de R$ 100 do TAPADA', width: 1371, height: 768, onerror: function () { this.style.display = 'none'; } }),
       el('h1', {}, ['Modo Carreira']),
       el('p', { class: 'muted' }, ['Escolha a liga e o clube. A cada temporada você leiloa reforços, joga o campeonato e tenta ser campeão.'])
     ]));
@@ -891,6 +892,20 @@
       el('button', { class: 'btn accent', onclick: open }, ['Começar carreira'])
     ]);
     main.insertBefore(card, main.firstChild.nextSibling || null);
+  }
+
+  // A nota de R$ 100 (fundo transparente) aparece também na home, ao lado da chamada.
+  function mountNota() {
+    const hero = document.querySelector('.hero-nota');
+    if (!hero || hero.dataset.notaHook) return;
+    hero.dataset.notaHook = '1';
+    const img = hero.querySelector('img');
+    if (img) {
+      // mantém a foto como destaque, mas garante que a nota transparente seja
+      // pré-carregada e fique disponível no hover/animacão
+      const pre = new Image();
+      pre.src = './img/nota-sem-fundo.png';
+    }
   }
 
   const obs = new MutationObserver(() => mountButton());
