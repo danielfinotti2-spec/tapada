@@ -190,3 +190,7 @@ img.face.pendente {
     radial-gradient(ellipse 62% 46% at 50% 108%, #4b82bd 0 60%, transparent 60.5%),
     linear-gradient(160deg, #16314c, #1d4368);
 }
+/* nota de R$100 com fundo transparente: flutua sobre o cartão */
+.paper-nota, .wait-nota {
+  filter: drop-shadow(0 14px 24px rgba(10, 44, 99, 0.28));
+}

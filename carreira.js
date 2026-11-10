@@ -131,7 +131,17 @@
       table: null,
       scorers: {},
       history: [],
-      leagueData: null
+      leagueData: null,
+      // --- finanças (Financeiro por temporada, em R$ milhões) ---
+      caixa: null,         // definido em garantirFinancas() conforme a liga
+      temporadas: 0,
+      ultimoOrcamento: null,
+      // --- mercado ---
+      mercado: {
+        disponiveis: null, // pool gerado na abertura da janela
+        ofertas: [],       // propostas por seus jogadores
+        historico: []      // transferências fechadas
+      }
     };
     st.teams = teams;
     st.leagueData = { teams };
@@ -257,6 +267,7 @@
       const nm = (input.value || '').trim() || 'Técnico';
       state = newCareer(code, club, nm);
       buildAuctionPool(state);
+      garantirFinancas(state);
       save(state);
       render();
     } }, ['Começar o leilão']);
@@ -410,6 +421,10 @@
     }
 
     wrap.appendChild(el('h3', {}, [`Classificação · você é o ${pos}º`]));
+    wrap.appendChild(el('div', { class: 'car-quick' }, [
+      el('button', { class: 'btn soft', onclick: () => render('financas') }, ['Financeiro']),
+      el('button', { class: 'btn soft', onclick: () => render('mercado') }, ['Mercado'])
+    ]));
     const table = el('table', { class: 'table car-table' }, [
       el('thead', {}, [el('tr', {}, [el('th', {}, ['#']), el('th', {}, ['Clube']), el('th', {}, ['P']), el('th', {}, ['J']), el('th', {}, ['V']), el('th', {}, ['SG'])])]),
       el('tbody', {}, tab.map((r, i) => el('tr', { class: r.name === me.name ? 'me' : '' }, [
@@ -473,12 +488,24 @@
 
   function endSeason() {
     const st = state;
+    garantirFinancas(st);
     const tab = tableSort(st.table);
     const pos = tab.findIndex(r => r.name === you(st).name) + 1;
     const champ = tab[0];
     const prize = pos === 1 ? 40 : pos <= 3 ? 28 : pos <= 6 ? 20 : 12;
+    // premiação entra no orçamento do leilão (R$ 100) e no caixa financeiro
     st.history.push({ season: st.season, pos, pts: tab[pos - 1].pts, champion: champ.name, prize });
     st.budget += prize;
+
+    // fecha as contas da temporada: receitas - despesas entram no caixa
+    const orc = FIN().orcamento(st);
+    orc.receita.premiacao = prize * 0.5; // metade da premiação vai para o caixa do clube
+    const receita = Object.values(orc.receita).reduce((a, b) => a + b, 0);
+    const despesa = Object.values(orc.despesa).reduce((a, b) => a + b, 0);
+    st.caixa = +(st.caixa + receita - despesa).toFixed(1);
+    st.temporadas = (st.temporadas || 0) + 1;
+    st.ultimoOrcamento = { ...orc, totalReceita: +receita.toFixed(1), totalDespesa: +despesa.toFixed(1), saldo: +(receita - despesa).toFixed(1) };
+
     st.phase = 'offseason';
     save(st);
     render();
@@ -489,11 +516,24 @@
     const last = st.history[st.history.length - 1];
     const wrap = el('div', { class: 'car-page' });
     wrap.appendChild(el('h1', {}, ['Fim da temporada ' + last.season]));
+    const orc = st.ultimoOrcamento;
     wrap.appendChild(el('div', { class: 'car-podium' }, [
       el('p', {}, [last.pos === 1 ? '🏆 Você foi campeão!' : `Você terminou em ${last.pos}º com ${last.pts} pontos.`]),
       el('p', { class: 'muted' }, [`Campeão: ${last.champion}`]),
-      el('p', { class: 'muted' }, [`Premiação: ${money(last.prize)} — agora você tem ${money(st.budget)}.`])
+      el('p', { class: 'muted' }, [`Premiação do leilão: ${money(last.prize)} — agora você tem ${money(st.budget)}.`])
     ]));
+
+    // balanço financeiro
+    if (orc) {
+      wrap.appendChild(el('div', { class: 'car-fin' }, [
+        el('h3', {}, ['Balanço da temporada']),
+        el('ul', {}, [
+          ...Object.entries(orc.receita).filter(([, v]) => v > 0).map(([k, v]) => el('li', {}, [el('span', {}, [ROTULO_RECEITA[k] || k]), el('b', { class: 'pos' }, [`+ ${(+v).toFixed(1)}`])])),
+          ...Object.entries(orc.despesa).map(([k, v]) => el('li', {}, [el('span', {}, [ROTULO_DESPESA[k] || k]), el('b', { class: 'neg' }, [`- ${(+v).toFixed(1)}`])]))
+        ]),
+        el('p', { class: 'muted small' }, [`Saldo: R$ ${orc.saldo.toFixed(1)}M · caixa atual: R$ ${st.caixa.toFixed(1)}M`])
+      ]));
+    }
 
     if (st.history.length > 1) {
       wrap.appendChild(el('h3', {}, ['Sua história']));
@@ -520,13 +560,242 @@
     return wrap;
   }
 
+  // ---------- finanças ----------
+  function FIN() { return window.TAPADA_FINANCAS; }
+
+  function garantirFinancas(st) {
+    if (typeof st.caixa !== 'number') {
+      // caixa inicial coerente com a liga: um clube de topo tem mais a gastar
+      const eco = (window.TAPADA_FINANCAS || { economia: () => ({ tv: 10 }) }).economia(st.league);
+      st.caixa = Math.max(6, +(eco.tv * 0.85).toFixed(1));
+    }
+    if (typeof st.temporadas !== 'number') st.temporadas = 0;
+    if (!st.mercado) st.mercado = { disponiveis: null, ofertas: [], historico: [] };
+  }
+
+  function screenFinancas() {
+    const st = state;
+    garantirFinancas(st);
+    const me = you(st);
+    const orc = FIN().orcamento(st);
+    st.ultimoOrcamento = orc;
+    const wrap = el('div', { class: 'car-page' });
+
+    wrap.appendChild(el('div', { class: 'car-top' }, [
+      el('img', { src: me.crest, alt: '', width: 44, height: 44, onerror: function () { this.style.visibility = 'hidden'; } }),
+      el('div', { class: 'grow' }, [el('b', {}, [st.manager]), el('small', {}, [`${me.name} · ${st.leagueName}`])]),
+      el('div', { class: 'car-wallet' }, [el('b', {}, [`R$ ${st.caixa.toFixed(1)}M`]), el('small', {}, ['em caixa'])])
+    ]));
+
+    // receitas
+    const rec = el('div', { class: 'car-fin' }, [
+      el('h3', {}, ['Receitas da temporada']),
+      el('ul', {}, Object.entries(orc.receita).filter(([, v]) => v > 0).map(([k, v]) =>
+        el('li', {}, [el('span', {}, [ROTULO_RECEITA[k] || k]), el('b', { class: 'pos' }, [`+ ${v.toFixed(1)}`])])))
+    ]);
+    wrap.appendChild(rec);
+
+    const desp = el('div', { class: 'car-fin' }, [
+      el('h3', {}, ['Despesas']),
+      el('ul', {}, Object.entries(orc.despesa).map(([k, v]) =>
+        el('li', {}, [el('span', {}, [ROTULO_DESPESA[k] || k]), el('b', { class: 'neg' }, [`- ${v.toFixed(1)}`])])))
+    ]);
+    wrap.appendChild(desp);
+
+    const saldo = orc.saldo;
+    wrap.appendChild(el('div', { class: 'car-balance ' + (saldo >= 0 ? 'ok' : 'bad') }, [
+      el('b', {}, [saldo >= 0 ? `Lucro de R$ ${saldo.toFixed(1)}M` : `Prejuízo de R$ ${Math.abs(saldo).toFixed(1)}M`]),
+      el('small', {}, [`Receita ${orc.totalReceita.toFixed(1)} · Despesa ${orc.totalDespesa.toFixed(1)}`])
+    ]));
+
+    // folha salarial: os 6 maiores
+    const folha = me.squad.map(p => ({ p, s: FIN().salarioDe(p, st.league), v: FIN().valorDe(p, st.league) }))
+      .sort((a, b) => b.s - a.s);
+    if (folha.length) {
+      wrap.appendChild(el('h3', {}, ['Folha salarial e valor de mercado']));
+      const ul = el('ul', { class: 'car-payroll' });
+      folha.slice(0, 8).forEach(({ p, s, v }) => ul.appendChild(el('li', {}, [
+        face(p, 28),
+        el('span', { class: 'grow' }, [el('b', {}, [p.short]), el('small', {}, [p.pos])]),
+        el('span', {}, [el('b', {}, [`R$ ${s} mil/mês`]), el('small', {}, [`valor ${v.toFixed(1)} mi`])])
+      ])));
+      wrap.appendChild(ul);
+    }
+
+    wrap.appendChild(el('button', { class: 'btn primary block', onclick: () => render('mercado') }, ['Abrir mercado de transferências']));
+    wrap.appendChild(el('button', { class: 'btn ghost block', onclick: () => { mode = null; render(); } }, ['← Voltar']));
+    return wrap;
+  }
+
+  const ROTULO_RECEITA = {
+    tv: 'Direitos de televisão',
+    patrocinio: 'Patrocínio master',
+    bilheteria: 'Bilheteria',
+    socios: 'Sócios-torcedores',
+    premiacao: 'Premiação'
+  };
+  const ROTULO_DESPESA = {
+    salarios: 'Salários do elenco',
+    estrutura: 'Estrutura e estádio',
+    olheiros: 'Departamento de olheiros'
+  };
+
+  // ---------- mercado ----------
+  function abrirMercado(st) {
+    garantirFinancas(st);
+    const todas = DATA();
+    const me = you(st);
+    if (!st.mercado.disponiveis) {
+      const pool = FIN().poolDosMercados(todas, st);
+      // amostra boa: craques + volume, ordenados por nota
+      const r = FIN().rnd(FIN().hash(st.club + st.season + 'mkt'));
+      const pick = [];
+      const usados = new Set();
+      const alvo = 120;
+      while (pick.length < alvo && pick.length < pool.length) {
+        const i = Math.floor(r() * pool.length);
+        const p = pool[i];
+        if (usados.has(p.id)) continue;
+        usados.add(p.id);
+        pick.push({ ...p, pedido: FIN().precoDe(p) });
+      }
+      pick.sort((a, b) => b.rating - a.rating);
+      st.mercado.disponiveis = pick;
+      st.mercado.ofertas = FIN().ofertasPorMeusJogadores(st, Math.min(3, me.squad.length));
+    }
+  }
+
+  function screenMercado() {
+    const st = state;
+    abrirMercado(st);
+    const me = you(st);
+    const wrap = el('div', { class: 'car-page' });
+
+    wrap.appendChild(el('div', { class: 'car-top' }, [
+      el('img', { src: me.crest, alt: '', width: 40, height: 40, onerror: function () { this.style.visibility = 'hidden'; } }),
+      el('div', { class: 'grow' }, [el('b', {}, ['Mercado de transferências']), el('small', {}, [`Caixa: R$ ${st.caixa.toFixed(1)}M · elenco ${me.squad.length}`])]),
+      el('button', { class: 'btn ghost', onclick: () => render('financas') }, ['Financeiro'])
+    ]));
+
+    // ofertas recebidas
+    if (st.mercado.ofertas.length) {
+      wrap.appendChild(el('h3', {}, ['Propostas pelo seu elenco']));
+      const ul = el('ul', { class: 'car-offers' });
+      st.mercado.ofertas.forEach((of, idx) => {
+        ul.appendChild(el('li', {}, [
+          face(of.player, 30),
+          el('span', { class: 'grow' }, [el('b', {}, [of.player.short]), el('small', {}, [`${of.de} oferece R$ ${of.valor}M${of.parcelado ? ' (parcelado)' : ''}`])]),
+          el('button', { class: 'btn soft', onclick: () => {
+            me.squad = me.squad.filter(p => p.id !== of.player.id);
+            st.caixa += of.valor;
+            st.mercado.historico.push({ tipo: 'venda', jogador: of.player.name, para: of.de, valor: of.valor, temporada: st.season });
+            st.mercado.ofertas.splice(idx, 1);
+            save(st); render('mercado');
+          } }, ['Vender']),
+          el('button', { class: 'btn ghost', onclick: () => { st.mercado.ofertas.splice(idx, 1); save(st); render('mercado'); } }, ['Recusar'])
+        ]));
+      });
+      wrap.appendChild(ul);
+    }
+
+    // alvos
+    wrap.appendChild(el('h3', {}, ['Jogadores disponíveis']));
+    wrap.appendChild(el('p', { class: 'muted small' }, ['Clubes de vários países. Faça uma oferta abaixo do pedido e veja se aceitam.']));
+    const list = el('div', { class: 'car-market' });
+    st.mercado.disponiveis.slice(0, 40).forEach(t => {
+      const row = el('div', { class: 'car-mkt' }, [
+        face(t, 34),
+        el('span', { class: 'grow' }, [
+          el('b', {}, [t.short]),
+          el('small', {}, [`${t.pos} · ${t.club} (${(DATA()[t.liga] || {}).title || t.liga}) · nota ${t.rating}`])
+        ]),
+        el('span', { class: 'car-price' }, [el('b', {}, [`R$ ${t.pedido}M`]), el('small', {}, ['pedido'])]),
+        el('button', { class: 'btn soft', disabled: st.caixa < t.pedido * 0.5 ? 'disabled' : null, title: st.caixa < t.pedido * 0.5 ? 'Caixa insuficiente' : '', onclick: () => abrirNegociacao(t) }, [st.caixa < t.pedido * 0.5 ? 'Sem caixa' : 'Negociar'])
+      ]);
+      list.appendChild(row);
+    });
+    wrap.appendChild(list);
+
+    if (st.mercado.historico.length) {
+      wrap.appendChild(el('h3', {}, ['Suas transferências']));
+      const ul = el('ul', { class: 'car-goals' });
+      st.mercado.historico.slice().reverse().forEach(h => ul.appendChild(el('li', {}, [
+        el('span', {}, [(h.tipo === 'venda' ? '→ ' : '← ') + h.jogador]),
+        el('b', {}, [`${h.tipo === 'venda' ? '+' : '-'} R$ ${h.valor}M`])
+      ])));
+      wrap.appendChild(ul);
+    }
+
+    wrap.appendChild(el('button', { class: 'btn ghost block', onclick: () => render('financas') }, ['← Voltar']));
+    return wrap;
+  }
+
+  // modal de negociação
+  function abrirNegociacao(alvo) {
+    const st = state;
+    const me = you(st);
+    const wrap = el('div', { class: 'car-nego' });
+    let tentativa = 0;
+    let mensagem = 'Faça sua oferta. O clube pede R$ ' + alvo.pedido + ' mi.';
+
+    const valor = el('input', { class: 'input', type: 'number', value: Math.round(alvo.pedido * 0.8), min: '0', step: '0.5' });
+    const msg = el('p', { class: 'car-nego-msg' }, [mensagem]);
+
+    const fechar = () => { wrap.remove(); };
+
+    const tentar = (v) => {
+      tentativa++;
+      const res = FIN().negociarCompra(alvo, v, tentativa);
+      if (res.aceita) {
+        if (v > st.caixa) { msg.textContent = `Aceitaram R$ ${v} mi, mas seu caixa é R$ ${st.caixa.toFixed(1)} mi.`; return; }
+        st.caixa -= v;
+        me.squad.push(alvo);
+        me.squad.sort((a, b) => b.rating - a.rating);
+        st.mercado.historico.push({ tipo: 'compra', jogador: alvo.name, para: alvo.club, valor: v, temporada: st.season });
+        st.mercado.disponiveis = st.mercado.disponiveis.filter(p => p.id !== alvo.id);
+        save(st);
+        fechar();
+        render('mercado');
+        toast(`Contratado: ${alvo.name} por R$ ${v} mi.`);
+      } else {
+        msg.textContent = res.msg + (res.contra ? ` Contraproposta: R$ ${res.contra} mi.` : '');
+        if (res.contra) valor.value = res.contra;
+      }
+    };
+
+    wrap.appendChild(el('div', { class: 'card car-nego-card' }, [
+      el('button', { class: 'modal-x', onclick: fechar, 'aria-label': 'Fechar' }, ['×']),
+      face(alvo, 84),
+      el('h2', {}, [alvo.name]),
+      el('p', { class: 'muted' }, [`${alvo.pos} · ${alvo.club} · nota ${alvo.rating}`]),
+      el('p', { class: 'small' }, [`Pedido: R$ ${alvo.pedido} mi · valor de mercado R$ ${FIN().valorDe(alvo, alvo.liga).toFixed(1)} mi`]),
+      el('label', { class: 'small' }, ['Sua oferta (R$ milhões)']),
+      valor,
+      el('div', { class: 'car-nego-actions' }, [
+        el('button', { class: 'btn soft', onclick: () => { valor.value = +(alvo.pedido * 0.9).toFixed(1); tentar(+valor.value); } }, ['Ofertar 90%']),
+        el('button', { class: 'btn primary', onclick: () => tentar(+valor.value) }, ['Enviar oferta'])
+      ]),
+      msg
+    ]));
+    // o modal vive dentro do overlay (fora do .car-shell, que é limpo pelo render)
+    root.appendChild(wrap);
+  }
+
+  function toast(texto) {
+    const t = el('div', { class: 'toast car-toast' }, [el('b', {}, [texto])]);
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 2800);
+  }
+
   // ---------- orquestração ----------
   let state = null;
   let mode = 'start';
   let modeArg = null;
 
   function render(m, arg) {
-    if (m) { mode = m; modeArg = arg; }
+    // m === null força voltar para o "hub" da fase atual
+    if (m !== undefined && m !== null) { mode = m; modeArg = arg; }
+    if (m === null) mode = null;
     if (!root) return;
     root.innerHTML = '';
     let view;
@@ -535,10 +804,15 @@
       else if (mode === 'name') view = screenName(modeArg.league, modeArg.club);
       else view = screenStart();
     }
-    else if (state.phase === 'auction') view = screenAuction();
-    else if (state.phase === 'season') view = screenSeason();
-    else if (state.phase === 'offseason') view = screenOffseason();
-    else view = screenStart();
+    else {
+      garantirFinancas(state);
+      if (mode === 'financas') view = screenFinancas();
+      else if (mode === 'mercado') view = screenMercado();
+      else if (state.phase === 'auction') view = screenAuction();
+      else if (state.phase === 'season') view = screenSeason();
+      else if (state.phase === 'offseason') view = screenOffseason();
+      else view = screenStart();
+    }
     root.appendChild(view);
     window.scrollTo(0, 0);
   }
