@@ -375,6 +375,20 @@
     st.scorers = {};
     st.round = 0;
     st.phase = 'season';
+    // copa continental: entra a partir da 2ª temporada (ou já na 1ª, se o clube é forte)
+    const CO = window.TAPADA_COPAS;
+    const extra = window.TAPADA_EXTRA_LEAGUES || {};
+    if (CO) {
+      const conf = CO.continente(st.league);
+      const comp = extra[conf];
+      if (comp) {
+        const me = you(st);
+        st.copa = CO.criar({
+          comp, meuClube: me.name, meuCrest: me.crest, season: st.season,
+          elencoDe: nome => (st.teams.find(t => t.name === nome) || {}).squad || []
+        });
+      }
+    }
     save(st);
     render();
   }
@@ -425,6 +439,33 @@
       el('button', { class: 'btn soft', onclick: () => render('financas') }, ['Financeiro']),
       el('button', { class: 'btn soft', onclick: () => render('mercado') }, ['Mercado'])
     ]));
+
+    // copa continental
+    if (st.copa) {
+      const copa = st.copa;
+      const CO = window.TAPADA_COPAS;
+      const faseTxt = copa.campeao ? `Campeão: ${copa.campeao}` : copa.eliminado ? 'Eliminado' : copa.fases[copa.fase] || 'Encerrada';
+      const box = el('div', { class: 'car-cup' }, [
+        el('div', { class: 'car-cup-head' }, [
+          el('b', {}, [copa.title]),
+          el('small', {}, [faseTxt])
+        ])
+      ]);
+      const jogos = copa.jogos[copa.fase] || [];
+      const euNome = you(st).name;
+      const meuJogo = jogos.find(m => m.home === euNome || m.away === euNome);
+      if (meuJogo && !copa.campeao && !copa.eliminado) {
+        box.appendChild(el('p', { class: 'car-cup-fixture' }, [
+          el('b', {}, [meuJogo.home]), el('i', {}, ['×']), el('b', {}, [meuJogo.away])
+        ]));
+        box.appendChild(el('button', { class: 'btn primary block', onclick: () => {
+          CO.jogarFase(copa, nome => (st.teams.find(t => t.name === nome) || {}).squad || []);
+          save(st);
+          render();
+        } }, [`Jogar ${copa.fases[copa.fase] || 'a fase'}`]));
+      }
+      wrap.appendChild(box);
+    }
     const table = el('table', { class: 'table car-table' }, [
       el('thead', {}, [el('tr', {}, [el('th', {}, ['#']), el('th', {}, ['Clube']), el('th', {}, ['P']), el('th', {}, ['J']), el('th', {}, ['V']), el('th', {}, ['SG'])])]),
       el('tbody', {}, tab.map((r, i) => el('tr', { class: r.name === me.name ? 'me' : '' }, [

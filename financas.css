@@ -108,3 +108,17 @@
   .car-mkt { flex-wrap: wrap; }
   .car-mkt .car-price { text-align: left; }
 }
+.car-cup {
+  margin: 18px 0; padding: 14px 16px; border-radius: 16px;
+  background: linear-gradient(135deg, #0f3a70, #1565d8);
+  color: #fff;
+}
+.car-cup-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.car-cup-head b { font-size: 16px; font-stretch: 84%; }
+.car-cup-head small { color: #cfe3fb; font-size: 12px; }
+.car-cup-fixture {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  margin: 12px 0 10px; font-size: 16px; color: #fff;
+}
+.car-cup-fixture i { font-style: normal; color: #a9cdf5; }
+.car-cup .btn { background: #a8dcff; color: #06284f; font-weight: 800; }
