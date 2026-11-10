@@ -2,6 +2,8 @@
 
 Leilão de futebol online para jogar com a galera: cada técnico recebe **R$ 100** e os jogadores vão a leilão um por um, ao vivo. Fechou o elenco, começa o campeonato.
 
+**No ar:** https://tapada-murex.vercel.app
+
 Inclui **9 ligas** (2.864 jogadores) e um **Modo Carreira** offline.
 
 ## Ligas
@@ -41,14 +43,20 @@ Offline e salvo no navegador (`localStorage`):
 
 ## Publicar na Vercel
 
-O site é estático. A pasta inteira é o output — não há build.
+O site é estático — não há build. Já está publicado em https://tapada-murex.vercel.app
+e o projeto está ligado a este repositório: **todo push na `master` gera deploy automático**.
+
+Para publicar do zero:
 
 ```bash
 npm i -g vercel
 vercel --prod
 ```
 
-O `vercel.json` já define cabeçalhos, cache e limpeza de rotas.
+O `vercel.json` define `framework: null` (estático), cache de assets e cabeçalhos de segurança.
+
+> O leilão online precisa de servidor. Na versão publicada ele não está disponível —
+> o que funciona na Vercel é o **Modo Carreira**, que roda inteiro no navegador.
 
 ## Estrutura
 
