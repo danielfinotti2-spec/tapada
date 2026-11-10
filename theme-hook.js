@@ -44,7 +44,9 @@
     }
   };
 
+  // --paper é o fundo do herói e da barra do topo: precisa acompanhar o tema
   var PAPER = { '--paper': '#b8dcf7', '--paper-ink': '#06284f' };
+  var PAPER_DARK = { '--paper': '#0f2a4a', '--paper-ink': '#e7f1fb' };
 
   function tokens() {
     var root = document.documentElement;
@@ -55,10 +57,12 @@
 
   function paint() {
     var root = document.documentElement;
+    var dark = root.getAttribute('data-theme') === 'dark';
     var set = tokens();
     for (var k in set) if (Object.prototype.hasOwnProperty.call(set, k)) root.style.setProperty(k, set[k]);
-    for (var p in PAPER) if (Object.prototype.hasOwnProperty.call(PAPER, p)) root.style.setProperty(p, PAPER[p]);
-    root.style.setProperty('color-scheme', root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light');
+    var papel = dark ? PAPER_DARK : PAPER;
+    for (var p in papel) if (Object.prototype.hasOwnProperty.call(papel, p)) root.style.setProperty(p, papel[p]);
+    root.style.setProperty('color-scheme', dark ? 'dark' : 'light');
   }
 
   paint();

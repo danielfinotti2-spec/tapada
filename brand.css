@@ -100,6 +100,13 @@
 /* botões "tinta" e barra de voltar: creme/amarelo -> azul claro (texto legível)
    Sem redeclarar --paper-ink, que continua sendo o azul escuro dos títulos. */
 .btn.ink { color: #d6e9ff; }
+[data-theme=dark] .btn.ink,
+[data-theme=dark] .btn.ink-ghost {
+  background: var(--tint);
+  color: var(--ink);
+  border-color: var(--line);
+}
+[data-theme=dark] .btn.ink { background: var(--pri); color: var(--pri-ink); }
 .back-bar { color: #d6e9ff; }
 .back-bar .btn.ink { background: #d6e9ff; color: #0a2c63; }
 .back-bar .btn.ink-ghost { border-color: #d6e9ff73; color: #d6e9ff; }
@@ -118,8 +125,26 @@
 
 /* marca d'água da seção "sobre": ondinhas verde -> azul */
 .about {
-  background-color: #eef4fd;
+  background-color: var(--pale);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='28' viewBox='0 0 160 28'%3E%3Cg fill='none' stroke='%230b3d80' stroke-opacity='.10'%3E%3Cpath d='M0 7c20-9 20 9 40 0s20 9 40 0 20 9 40 0 20 9 40 0'/%3E%3Cpath d='M0 14c20-9 20 9 40 0s20 9 40 0 20 9 40 0 20 9 40 0'/%3E%3Cpath d='M0 21c20-9 20 9 40 0s20 9 40 0 20 9 40 0 20 9 40 0'/%3E%3C/g%3E%3C/svg%3E");
+}
+/* no tema escuro a seção acompanha a paleta (antes ficava clara e o texto sumia) */
+[data-theme=dark] .about {
+  background-color: var(--bg);
+  background-image: none;
+}
+[data-theme=dark] .about,
+[data-theme=dark] .about h2,
+[data-theme=dark] .about p,
+[data-theme=dark] .about li,
+[data-theme=dark] .about summary,
+[data-theme=dark] .about strong {
+  color: var(--ink);
+}
+[data-theme=dark] .about-facts b { color: var(--pri); }
+[data-theme=dark] .about details {
+  background: var(--surface);
+  border-color: var(--line);
 }
 
 /* ---------- 5. Avatar de jogador sem foto (404 na origem) ================ */
@@ -211,3 +236,18 @@ img.face.pendente {
 }
 .foto-credito a { color: var(--pri); text-decoration: underline; text-underline-offset: 2px; }
 [data-theme=dark] .foto-credito { background: var(--surface); }
+
+/* ---------- 11. Herói no tema escuro ===================================
+   O título e o texto do herói usavam cor fixa escura (--paper-ink), que
+   sumia sobre o fundo escuro. Aqui eles seguem o token --ink. */
+.hero h1,
+.hero h1 span,
+.hero p {
+  color: var(--ink);
+}
+[data-theme=dark] .hero h1,
+[data-theme=dark] .hero h1 span,
+[data-theme=dark] .hero p {
+  color: var(--ink);
+  text-shadow: none;
+}

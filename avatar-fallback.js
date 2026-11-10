@@ -17,23 +17,32 @@
     if (img.dataset.avatarFallback) return true;
     img.dataset.avatarFallback = '1';
 
-    var letra = iniciais(img.alt || img.getAttribute('alt') || '');
-    // Avatar limpo: fundo em degradê azul, silhueta discreta atrás e as iniciais
-    // bem legíveis no centro (antes o texto ficava por cima do corpo e colava).
+    var nome = img.alt || img.getAttribute('alt') || '';
+    var letra = iniciais(nome);
+    // Cor estável pelo nome: cada jogador tem seu tom, o elenco não fica monocromático.
+    var TONS = [
+      ['#dbeafe', '#93c5fd', '#1e3a8a'], ['#e0f2fe', '#7dd3fc', '#0c4a6e'],
+      ['#dbeafe', '#a5b4fc', '#1e1b4b'], ['#e0e7ff', '#93c5fd', '#1e40af'],
+      ['#ccfbf1', '#5eead4', '#134e4a'], ['#e0f2fe', '#60a5fa', '#1e3a8a']
+    ];
+    var h = 0;
+    for (var k = 0; k < nome.length; k++) h = (h * 31 + nome.charCodeAt(k)) >>> 0;
+    var tom = TONS[h % TONS.length];
+
     var svg =
       '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">' +
-        '<defs><linearGradient id="g" x1="0" y1="0" x2="0.3" y2="1">' +
-          '<stop offset="0" stop-color="#eaf3ff"/><stop offset="1" stop-color="#b9d5f4"/>' +
+        '<defs><linearGradient id="g" x1="0" y1="0" x2="0.35" y2="1">' +
+          '<stop offset="0" stop-color="' + tom[0] + '"/><stop offset="1" stop-color="' + tom[1] + '"/>' +
         '</linearGradient></defs>' +
         '<rect width="200" height="200" fill="url(#g)"/>' +
-        '<g fill="#7aa8dc" opacity="0.34">' +
-          '<circle cx="100" cy="70" r="30"/>' +
-          '<ellipse cx="100" cy="168" rx="52" ry="44"/>' +
+        '<g fill="#1e3a8a" opacity="0.16">' +
+          '<circle cx="100" cy="74" r="32"/>' +
+          '<ellipse cx="100" cy="172" rx="56" ry="46"/>' +
         '</g>' +
         (letra
-          ? '<text x="100" y="132" text-anchor="middle" ' +
-            'font-family="Archivo,Segoe UI,Arial,sans-serif" font-size="64" font-weight="800" ' +
-            'fill="#1b4f8f" fill-opacity="0.9">' + letra + '</text>'
+          ? '<text x="100" y="128" text-anchor="middle" ' +
+            'font-family="Archivo,Segoe UI,Arial,sans-serif" font-size="62" font-weight="800" ' +
+            'fill="' + tom[2] + '" fill-opacity="0.88">' + letra + '</text>'
           : '') +
       '</svg>';
 
