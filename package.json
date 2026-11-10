@@ -1,0 +1,14 @@
+{
+  "name": "tapada",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Leilão de futebol online: 9 ligas, 2.864 jogadores e modo carreira",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "deploy": "vercel --prod"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

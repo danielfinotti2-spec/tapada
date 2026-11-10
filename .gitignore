@@ -17,3 +17,5 @@ node_modules/
 # editores
 .vscode/
 .idea/
+
+.vercel
