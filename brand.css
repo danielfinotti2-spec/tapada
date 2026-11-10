@@ -149,16 +149,24 @@ body {
 /* ---------- 8. Logo TAPADA =============================================== */
 .logo .logo-tapada { display: inline-flex; align-items: baseline; gap: 0; }
 
-/* ---------- 9. Foto no destaque do herói ================================ */
+/* ---------- 9. Nota de R$ 100 sem fundo no herói ======================== */
 .hero-nota img {
   display: block;
   width: 100%;
   height: auto;
   aspect-ratio: 1371 / 768;
-  object-fit: cover;
-  border-radius: 14px;
+  object-fit: contain;
+  border-radius: 0;
 }
-.hero-nota { border-radius: 16px; }
+.hero-nota {
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  overflow: visible;
+  filter: drop-shadow(0 22px 32px rgba(10, 44, 99, 0.32));
+}
+/* o "brilho" diagonal era para a foto com moldura; sobre recorte não faz sentido */
+.hero-nota .shine { display: none; }
 
 /* ---------- 10. Fotos de jogador =========================================
    - img.face com foto real: recorte encaixa no círculo
@@ -194,3 +202,12 @@ img.face.pendente {
 .paper-nota, .wait-nota {
   filter: drop-shadow(0 14px 24px rgba(10, 44, 99, 0.28));
 }
+.foto-credito {
+  text-align: center;
+  padding: 10px 16px 18px;
+  font-size: 11px;
+  color: var(--muted);
+  background: var(--pale);
+}
+.foto-credito a { color: var(--pri); text-decoration: underline; text-underline-offset: 2px; }
+[data-theme=dark] .foto-credito { background: var(--surface); }

@@ -65,19 +65,18 @@
     for (var j = 0; j < lista.length; j++) texto(lista[j]);
   }
 
-  // O destaque do herói (antes a nota de R$ 100 verde/amarela) mostra a foto.
+  // A nota do herói agora vem pronta do bundle (nota-sem-fundo.png, já recortada):
+  // aqui só garantimos o enquadramento, sem trocar a imagem.
   function fotoNoHero() {
     var hero = document.querySelector('.hero-nota');
     if (!hero || hero.dataset.tapada) return;
     var img = hero.querySelector('img');
     if (!img) return;
-    img.src = PHOTO;
     img.alt = NAME;
     img.removeAttribute('width');
     img.removeAttribute('height');
     img.style.width = '100%';
     img.style.height = 'auto';
-    img.style.borderRadius = '14px';
     img.style.display = 'block';
     hero.dataset.tapada = '1';
   }
