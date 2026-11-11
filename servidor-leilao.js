@@ -154,13 +154,13 @@ function acharManager(sala, pid) {
 // ---------- leilão ----------
 function iniciarLeilao(sala) {
   const L = LIGAS[sala.mode];
-  const nVagas = formacoes(sala.size)[0].slots.length;
-  const total = Math.max(10, sala.managers.length * nVagas);
-  // monta o lote: mistura de craques, médios e baratos
+  // lote grande o bastante para titulares + banco de todo mundo
+  const nVagas = totalVagas(sala.size);
+  const total = Math.max(12, sala.managers.length * nVagas);
   const pool = L.players.slice();
   for (let i = pool.length - 1; i > 0; i--) { const j = rnd(i + 1); [pool[i], pool[j]] = [pool[j], pool[i]]; }
   const lotes = pool.slice(0, total).sort((a, b) => b.rating - a.rating);
-  sala.managers.forEach(m => { m.__size = sala.size; m.formation = formacoes(sala.size)[0].id; m.squad = novasVagas(sala.size, m.formation); m.coins = 100; m.ready = false; });
+  sala.managers.forEach(m => { m.__size = sala.size; m.formation = formacoes(sala.size)[0].id; normalizarSquad(m, sala); m.squad = m.squad.map(() => null); m.coins = 100; m.ready = false; });
   sala.phase = 'auction';
   sala.auction = {
     idx: 0, total: lotes.length, lots: lotes.map(p => p.id),
@@ -201,27 +201,55 @@ function proximoLote(sala) {
 // o cliente espera squad como array do tamanho da formação, com null nas vagas livres
 function novasVagas(size, formation) {
   const slots = formacaoDe({ formation }, size).slots;
-  return Array.from({ length: slots.length }, () => null);
-}
-function normalizarSquad(m, sala) {
-  const size = sala.size || m.__size || 5;
-  const n = formacaoDe(m, size).slots.length;
-  if (!Array.isArray(m.squad) || m.squad.length !== n) {
-    m.squad = Array.from({ length: n }, (_, i) => (Array.isArray(m.squad) ? m.squad[i] || null : null));
-  }
+  // titulares + vagas de banco (o cliente só desenha as de titular)
+  return Array.from({ length: slots.length + (BANCO_EXTRA[size] || 4) }, () => null);
 }
 
-// vagas da formação do técnico que aceitam o jogador
+// ---------------------------------------------------------------
+// Banco de reservas: além do time titular, cada técnico tem vagas
+// de banco (índice >= tamanho da formação). Pode encher quantas
+// quiser enquanto tiver dinheiro — inclusive 2 goleiros, 2 zagueiros.
+// ---------------------------------------------------------------
+const BANCO_EXTRA = { 5: 4, 7: 5, 11: 7 }; // vagas de banco por tamanho de time
+function totalVagas(size) {
+  return formacaoDe({ formation: formacoes(size)[0].id }, size).slots.length + (BANCO_EXTRA[size] || 4);
+}
+function ehBanco(size, formation, idx) {
+  return idx >= formacaoDe({ formation }, size).slots.length;
+}
+
+function normalizarSquad(m, sala) {
+  const size = sala.size || m.__size || 5;
+  const titular = formacaoDe(m, size).slots.length;
+  const total = totalVagas(size);
+  if (!Array.isArray(m.squad)) m.squad = [];
+  const novo = Array.from({ length: total }, (_, i) => m.squad[i] || null);
+  m.squad = novo;
+  // garante que as vagas de titular existam mesmo antes da formação ser escolhida
+  if (novo.length < titular) m.squad = Array.from({ length: total }, (_, i) => novo[i] || null);
+}
+
+// vagas que aceitam o jogador: titulares livres (compatíveis) + banco livre
 function vagasCompativeis(m, p) {
   const size = m.__size || 5;
   const slots = formacaoDe(m, size).slots;
   const squad = m.squad || [];
   const out = [];
+  // titulares: só posições compatíveis
   slots.forEach((grupo, i) => {
-    if (squad[i]) return; // vaga ocupada
+    if (squad[i]) return;
     if ((VAGA_GRUPO[grupo] || []).some(g => (p.groups || []).includes(g))) out.push(i);
   });
+  // banco: qualquer posição serve
+  for (let i = slots.length; i < totalVagas(size); i++) if (!squad[i]) out.push(i);
   return out;
+}
+
+// o time titular está completo?
+function titularCompleto(m, sala) {
+  const slots = formacaoDe(m, sala.size || m.__size || 5).slots;
+  for (let i = 0; i < slots.length; i++) if (!m.squad[i]) return false;
+  return true;
 }
 function formacaoDe(m, size) {
   const lista = formacoes(size);
@@ -233,12 +261,21 @@ function comprar(sala, m, p, vaga) {
   const a = sala.auction;
   const preco = Math.max(1, a.bid || 1);
   if (m.coins < preco) return { error: 'sem-saldo' };
-  const total = formacaoDe(m, sala.size).slots.length;
+  normalizarSquad(m, sala);
+  const total = totalVagas(sala.size);
   if (m.squad.filter(Boolean).length >= total) return { error: 'elenco-cheio' };
+  if (vaga == null) {
+    // sem vaga indicada: o primeiro espaço é titular compatível, senão banco
+    const livres = vagasCompativeis(m, p);
+    vaga = livres.length ? livres[0] : null;
+  }
+  if (vaga == null || m.squad[vaga]) return { error: 'vaga-ocupada' };
   m.coins -= preco;
-  if (!Array.isArray(m.squad)) m.squad = [];
   m.squad[vaga] = p.id;
-  const ids = m.squad.filter(Boolean);
+  // nota do time = só os titulares (o banco não infla a força)
+  const slots = formacaoDe(m, sala.size).slots;
+  const titulares = m.squad.slice(0, slots.length).filter(Boolean);
+  const ids = titulares.length ? titulares : m.squad.filter(Boolean);
   m.rating = Math.round(ids.reduce((t, id) => {
     const pl = LIGAS[sala.mode].players.find(x => x.id === id);
     return t + (pl ? pl.rating : 0);
@@ -319,11 +356,19 @@ function acao(sala, m, a) {
     case 'place': {
       if (!au || au.stage !== 'placing' || au.winner !== m.seat) return { error: 'fase' };
       const p = LIGAS[sala.mode].players.find(x => x.id === au.lot);
+      normalizarSquad(m, sala);
       const slot = Number(a.slot);
       const f = formacaoDe(m, sala.size);
-      if (!f.slots[slot] || (VAGA_GRUPO[f.slots[slot]] || []).every(g => !(p.groups || []).includes(g))) return { error: 'fora-de-posicao' };
+      const nTitulares = f.slots.length;
+      if (!Number.isInteger(slot) || slot < 0 || slot >= totalVagas(sala.size)) return { error: 'fora-de-posicao' };
+      // Titular exige posição compatível; banco aceita qualquer jogador.
+      if (slot < nTitulares) {
+        const grupo = f.slots[slot];
+        if ((VAGA_GRUPO[grupo] || []).every(g => !(p.groups || []).includes(g))) return { error: 'fora-de-posicao' };
+      }
       if (m.squad[slot]) return { error: 'vaga-ocupada' };
-      comprar(sala, m, p, slot);
+      const r = comprar(sala, m, p, slot);
+      if (r && r.error) return r;
       au.history.push({ p: p.id, seat: m.seat, price: au.bid });
       au.stage = 'wait'; au.idx++; au.winner = null;
       proximoLote(sala);
@@ -434,9 +479,15 @@ setInterval(() => {
       if (au.passed.includes(m.seat) || au.leader === m.seat) continue;
       if (!vagasCompativeis(m, p).length) { if (!au.passed.includes(m.seat)) au.passed.push(m.seat); continue; }
       const valor = precoBase(p);
-      const ocupadas = (m.squad || []).filter(Boolean).length;
-      const quantoPode = m.coins - (formacaoDe(m, sala.size).slots.length - ocupadas - 1) * 3;
-      const quer = p.rating >= 70 && valor + au.bid <= quantoPode && Math.random() < 0.55;
+      normalizarSquad(m, sala);
+      const nTit = formacaoDe(m, sala.size).slots.length;
+      const titularesLivres = m.squad.slice(0, nTit).filter(x => !x).length;
+      const bancoLivre = m.squad.slice(nTit).filter(x => !x).length;
+      // primeiro completa o time; depois só reforça o banco se sobrar dinheiro
+      const guardaTitulares = Math.max(0, titularesLivres - 1) * 3;
+      const quantoPode = m.coins - guardaTitulares;
+      const prioridade = titularesLivres > 0 ? 0.62 : (bancoLivre > 0 ? 0.3 : 0);
+      const quer = p.rating >= 70 && valor + au.bid <= quantoPode && Math.random() < prioridade;
       if (quer) {
         au.bid = au.bid + Math.max(1, Math.round(valor * 0.15));
         au.leader = m.seat;

@@ -42,6 +42,7 @@ function json(res, code, obj) {
   res.end(body);
 }
 
+function bancoExtra(size) { return size === 11 ? 7 : size === 7 ? 5 : 4; }
 function formacaoSlots(size, formacao) {
   const f = leilao.formacoes(size).find(x => x.id === formacao) || leilao.formacoes(size)[0];
   return f.slots.length;
@@ -100,7 +101,7 @@ async function api(req, res, url) {
         const L = leilao.ligas[sala.mode];
         m = {
           seat: livre, pid, name: (body.name || 'Técnico').slice(0, 18), bot: false, ready: false,
-          crest: (L.clubs[0] || {}).id, coins: 100, squad: Array.from({ length: formacaoSlots(sala.size, '1-2-1') }, () => null), formation: '1-2-1', rating: 0, left: false, __size: sala.size
+          crest: (L.clubs[0] || {}).id, coins: 100, squad: Array.from({ length: formacaoSlots(sala.size, '1-2-1') + (bancoExtra(sala.size)) }, () => null), formation: '1-2-1', rating: 0, left: false, __size: sala.size
         };
         sala.managers.push(m);
         sala.managers.sort((a, b) => a.seat - b.seat);

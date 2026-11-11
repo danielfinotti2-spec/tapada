@@ -251,3 +251,36 @@ img.face.pendente {
   color: var(--ink);
   text-shadow: none;
 }
+
+/* ---------- Banco de reservas ---------- */
+.banco-panel {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+.banco-panel h4 {
+  margin: 0 0 10px;
+  font-size: 13px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.banco-panel h4 small { margin-left: 6px; color: var(--pri); font-size: 11px; }
+.banco-linha { display: flex; gap: 8px; flex-wrap: wrap; }
+.banco-card {
+  display: grid; justify-items: center; gap: 3px;
+  width: 74px; padding: 8px 6px;
+  border-radius: 12px;
+  background: var(--pale);
+  border: 1px solid var(--line);
+}
+.banco-card img { width: 40px; height: 40px; border-radius: 50%; object-fit: contain; background: var(--tint); padding: 2px; }
+.banco-card b { font-size: 10.5px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.banco-card small {
+  font-size: 11px; font-weight: 800;
+  color: var(--acc-ink); background: var(--acc);
+  border-radius: 6px; padding: 0 5px;
+}
+.banco-vazio { font-size: 12px; color: var(--muted); }
