@@ -1,31 +1,17 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "buildCommand": "",
-  "outputDirectory": ".",
   "installCommand": "",
+  "buildCommand": "",
+  "outputDirectory": "public",
   "cleanUrls": true,
   "trailingSlash": false,
   "regions": ["gru1"],
-  "headers": [
-    {
-      "source": "/_astro/(.*)",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
-      ]
-    },
-    {
-      "source": "/img/(.*)",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=2592000" }
-      ]
-    },
+  "redirects": [
     {
       "source": "/(.*)",
-      "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
-      ]
+      "destination": "https://tapada.danielfinotti2.workers.dev/$1",
+      "permanent": false
     }
   ]
 }

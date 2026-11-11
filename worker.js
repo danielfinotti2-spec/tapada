@@ -125,8 +125,9 @@ export class Sala extends DurableObject {
     return ligas;
   }
 
+  // Sem cache em memória: cada requisição lê o estado gravado, para dois
+  // jogadores nunca verem versões diferentes da mesma sala.
   async load() {
-    if (this.sala) return this.sala;
     this.sala = (await this.db.get('sala')) || null;
     return this.sala;
   }
@@ -137,6 +138,13 @@ export class Sala extends DurableObject {
     const s = this.sala;
     s.v = (s.v || 0) + 1;
     s.at = Date.now();
+    await this.save();
+    await this.agendar();
+  }
+
+  // salva sem mudar a versão (as ações chamam isto; o handler incrementa 1x)
+  async salva() {
+    this.sala.at = Date.now();
     await this.save();
     await this.agendar();
   }
@@ -168,13 +176,13 @@ export class Sala extends DurableObject {
           a.stage = 'placing';
           a.winner = a.leader;
           a.placedAt = agora;
-          await this.toca();
+          await this.salva();
           const w = s.managers.find(m => m.seat === a.winner);
           if (w && w.bot) { await this.compraAuto(); }
         } else {
           a.idx++;
           await this.proximoLote();
-          await this.toca();
+          await this.salva();
         }
       }
       // bots dão lance
@@ -207,7 +215,7 @@ export class Sala extends DurableObject {
         a.bid += Math.max(1, Math.round(valor * 0.12));
         a.leader = m.seat;
         a.endsAt = Math.min(Math.max(a.endsAt, Date.now() + 2000), Date.now() + 6000);
-        await this.toca();
+        await this.salva();
       }
     }
   }
@@ -251,7 +259,7 @@ export class Sala extends DurableObject {
       bid: 0, leader: null, endsAt: 0, passed: [], history: [], winner: null };
     s.startedAt = Date.now();
     await this.proximoLote();
-    await this.toca();
+    await this.salva();
   }
 
   async comprar(m, p, vaga) {
@@ -290,7 +298,7 @@ export class Sala extends DurableObject {
     a.history.push({ p: a.lot, seat: a.winner, price: a.bid });
     a.stage = 'wait'; a.idx++; a.winner = null;
     await this.proximoLote();
-    await this.toca();
+    await this.salva();
   }
 
   async iniciarCampeonato() {
@@ -321,7 +329,7 @@ export class Sala extends DurableObject {
       j.ga = Math.min(6, pois(lam(fa, fh, false)));
       j.status = 'done';
     }
-    await this.toca();
+    await this.salva();
   }
 
   async acao(m, a) {
@@ -485,16 +493,21 @@ export class Sala extends DurableObject {
       const m = this.sala.managers.find(x => x.pid === body.pid && !x.left);
       if (!m) return Response.json({ error: 'nao-esta-na-sala' }, { status: 403 });
       const r = await this.acao(m, body.action || {});
-      await this.toca();
+      // uma unica atualizacao por acao (as acoes internas nao incrementam)
+      if (!r.error) await this.toca();
       if (r.error) return Response.json({ error: r.error }, { status: 400 });
       return Response.json(this.visao(body.pid));
     }
 
     if (op === 'state') {
       const v = Number(url.searchParams.get('v') || 0);
-      const out = { v: this.sala.v, now: Date.now(), hot: this.sala.phase === 'auction' };
-      // envia a view quando a versao muda (ou quando o cliente nunca recebeu)
-      if (this.sala.v !== v || !v) out.view = this.visao(url.searchParams.get('pid') || '');
+      // A versão diz se o estado mudou. Se o cliente está atrasado, mandamos a
+      // view no próprio heartbeat com uma versão imediatamente seguinte — assim
+      // ele nunca fica preso esperando um número que não vem.
+      const mudou = this.sala.v > v;
+      const out = { v: mudou ? this.sala.v : v, now: Date.now(), hot: this.sala.phase === 'auction' };
+      if (mudou) out.view = this.visao(url.searchParams.get('pid') || '');
+      else if (!this.sala.v) out.view = this.visao(url.searchParams.get('pid') || '');
       return Response.json(out);
     }
 
