@@ -343,8 +343,13 @@ export class Sala extends DurableObject {
         if (au.leader === m.seat) return { error: 'ja-lidera' };
         const p = ligas[s.mode].players.find(x => x.id === au.lot);
         if (!vagasCompativeis(m, p, s.size).length) return { error: 'sem-vaga' };
-        const v = Math.max(1, Math.min(Number(a.amount) || 0, m.coins));
-        if (v <= au.bid) return { error: 'lance-baixo' };
+        const pedido = Math.floor(Number(a.amount) || 0);
+        if (pedido <= au.bid) return { error: 'lance-baixo' };
+        // precisa guardar R$ 1 por vaga ainda vazia (o cliente mostra isso na tela)
+        const livres = (m.squad || []).filter(x => !x).length;
+        const teto = livres <= 1 ? m.coins : m.coins - (livres - 1);
+        if (pedido > teto) return { error: 'lance-alto' };
+        const v = pedido;
         au.bid = v; au.leader = m.seat;
         au.endsAt = Math.min(Math.max(au.endsAt, Date.now() + 3000), Date.now() + 4000);
         return {};

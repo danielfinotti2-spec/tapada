@@ -333,19 +333,22 @@ img.face.pendente {
 .foot-link {
   display: inline-flex;
   align-items: center;
-  padding: 5px 12px;
-  border-radius: 999px;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
   border: 1px solid var(--line);
   background: var(--pale);
   color: var(--pri);
-  font-weight: 700;
   text-decoration: none;
-  transition: transform .15s ease, background .15s ease, border-color .15s ease;
+  transition: transform .15s ease, background .15s ease, border-color .15s ease, color .15s ease;
 }
+.foot-link svg { width: 20px; height: 20px; }
 .foot-link:hover,
 .foot-link:focus-visible {
-  background: var(--tint);
+  background: var(--pri);
   border-color: var(--pri);
-  transform: translateY(-1px);
+  color: #fff;
+  transform: translateY(-2px);
 }
 .foot-link:active { transform: translateY(0); }
