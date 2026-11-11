@@ -43,6 +43,14 @@ function json(res, code, obj) {
 }
 
 function bancoExtra(size) { return size === 11 ? 7 : size === 7 ? 5 : 4; }
+function pidDoReq(req, url) {
+  let p = req.headers['x-pid'] || url.searchParams.get('pid') || '';
+  if (!p) {
+    const m = /(?:^|;\s*)pid=([A-Za-z0-9-]{8,64})/.exec(req.headers.cookie || '');
+    if (m) p = m[1];
+  }
+  return p || 'anon';
+}
 function formacaoSlots(size, formacao) {
   const f = leilao.formacoes(size).find(x => x.id === formacao) || leilao.formacoes(size)[0];
   return f.slots.length;
@@ -59,7 +67,15 @@ function lerCorpo(req) {
 
 // ---------- API ----------
 async function api(req, res, url) {
-  const pid = req.headers['x-pid'] || url.searchParams.get('pid') || 'anon';
+
+  // O cliente só manda x-pid nos POSTs. Nos GETs (polling), identificamos o técnico
+  // pelo cookie que gravamos na criação/entrada — senão todo mundo seria "anon".
+  let pid = req.headers['x-pid'] || url.searchParams.get('pid') || '';
+  if (!pid) {
+    const ck = /(?:^|;\s*)pid=([a-z0-9-]{8,64})/.exec(req.headers.cookie || '');
+    if (ck) pid = ck[1];
+  }
+  if (!pid) pid = 'anon';
 
   if (url.pathname === '/api/rooms') {
     const mode = url.searchParams.get('mode') || 'all';
@@ -84,6 +100,7 @@ async function api(req, res, url) {
       try {
         const s = leilao.novaSala(body.mode, body, pid, body.name);
         console.log(`[leilão] sala ${s.code} criada (${body.mode}, ${s.size} em campo)`);
+        res.setHeader('set-cookie', 'pid=' + pid + '; Path=/; SameSite=Lax');
         return json(res, 200, leilao.visao(s, pid));
       } catch (e) {
         console.error('[leilão] erro ao criar sala:', e.message);
@@ -101,13 +118,14 @@ async function api(req, res, url) {
         const L = leilao.ligas[sala.mode];
         m = {
           seat: livre, pid, name: (body.name || 'Técnico').slice(0, 18), bot: false, ready: false,
-          crest: (L.clubs[0] || {}).id, coins: 100, squad: Array.from({ length: formacaoSlots(sala.size, '1-2-1') + (bancoExtra(sala.size)) }, () => null), formation: '1-2-1', rating: 0, left: false, __size: sala.size
+          crest: (L.clubs[0] || {}).id, coins: 100, squad: Array.from({ length: formacaoSlots(sala.size, '1-2-1') + (bancoExtra(sala.size)) }, () => null), formation: '1-2-1', rating: 0, left: false, __size: sala.size, style: 'balanced', posture: 'balanced', fit: 75, wins: 0, draws: 0, losses: 0
         };
         sala.managers.push(m);
         sala.managers.sort((a, b) => a.seat - b.seat);
         leilao.toca(sala);
       }
       leilao.porPid.set(pid, code);
+      res.setHeader('set-cookie', 'pid=' + pid + '; Path=/; SameSite=Lax');
       return json(res, 200, leilao.visao(sala, pid));
     }
 
@@ -134,9 +152,10 @@ async function api(req, res, url) {
     const vCliente = Number(url.searchParams.get('v') || 0);
     const sala = leilao.salas.get(code);
     if (!sala) return json(res, 404, { error: 'sala-nao-existe' });
-    const ativos = sala.managers.filter(m => !m.left).length;
+    const quem = pidDoReq(req, url);
+    if (quem !== 'anon') res.setHeader('set-cookie', 'pid=' + quem + '; Path=/; SameSite=Lax');
     const payload = { v: sala.v, now: Date.now(), hot: sala.phase === 'auction' };
-    if (sala.v > vCliente) payload.view = leilao.visao(sala, pid);
+    if (sala.v > vCliente) payload.view = leilao.visao(sala, quem);
     return json(res, 200, payload);
   }
 
@@ -144,7 +163,9 @@ async function api(req, res, url) {
     const code = String(url.searchParams.get('c') || '').toUpperCase();
     const sala = leilao.salas.get(code);
     if (!sala) return json(res, 404, { error: 'sala-nao-existe' });
-    return json(res, 200, { ...leilao.visao(sala, pid), v: sala.v });
+    const quem = pidDoReq(req, url);
+    if (quem !== 'anon') res.setHeader('set-cookie', 'pid=' + quem + '; Path=/; SameSite=Lax');
+    return json(res, 200, { ...leilao.visao(sala, quem), v: sala.v });
   }
 
   if (url.pathname === '/api/ligas') {

@@ -120,7 +120,7 @@ function novaSala(mode, opts, pid, nome) {
     startedAt: 0
   };
   sala.managers.push({
-    seat: 0, pid, name: nome || 'Técnico', bot: false, ready: false,
+    seat: 0, pid, name: nome || 'Técnico', bot: false, ready: false, style: 'balanced', posture: 'balanced', fit: 75, wins: 0, draws: 0, losses: 0,
     crest: pick(L.clubs).id, coins: 100, squad: novasVagas(size, formacoes(size)[0].id), formation: formacoes(size)[0].id,
     rating: 0, left: false, __size: size
   });
@@ -142,7 +142,7 @@ function adicionarBot(sala) {
   const L = LIGAS[sala.mode];
   const livre = sala.managers.length;
   sala.managers.push({
-    seat: livre, pid: 'bot-' + uid(), name: nome, bot: true, ready: true,
+    seat: livre, pid: 'bot-' + uid(), name: nome, bot: true, ready: true, style: 'balanced', posture: 'balanced', fit: 75, wins: 0, draws: 0, losses: 0,
     crest: pick(L.clubs).id, coins: 100, squad: novasVagas(sala.size, formacoes(sala.size)[0].id), formation: formacoes(sala.size)[0].id, rating: 0, left: false, __size: sala.size
   });
 }
@@ -345,7 +345,8 @@ function acao(sala, m, a) {
       if (valor <= au.bid) return { error: 'lance-baixo' };
       au.bid = valor;
       au.leader = m.seat;
-      au.endsAt = Math.max(au.endsAt, Date.now() + 3000);
+      // cada lance dá +3s, mas o lote tem teto de 4s após o último lance
+      au.endsAt = Math.min(Math.max(au.endsAt, Date.now() + 3000), Date.now() + 4000);
       return {};
     }
     case 'pass': {
@@ -487,11 +488,16 @@ setInterval(() => {
       const guardaTitulares = Math.max(0, titularesLivres - 1) * 3;
       const quantoPode = m.coins - guardaTitulares;
       const prioridade = titularesLivres > 0 ? 0.62 : (bancoLivre > 0 ? 0.3 : 0);
-      const quer = p.rating >= 70 && valor + au.bid <= quantoPode && Math.random() < prioridade;
+      // Bots desistem cedo: cada lance encarece o alvo, então um humano consegue
+      // levar o jogador. Antes eles brigavam até o relógio estourar.
+      const caro = au.bid > valor * 1.15;
+      const desiste = caro && Math.random() > 0.25;
+      const quer = !desiste && p.rating >= 70 && valor + au.bid <= quantoPode && Math.random() < prioridade;
       if (quer) {
-        au.bid = au.bid + Math.max(1, Math.round(valor * 0.15));
+        au.bid = au.bid + Math.max(1, Math.round(valor * 0.12));
         au.leader = m.seat;
-        au.endsAt = Math.max(au.endsAt, Date.now() + 2500);
+        // extensão curta: o leilão não fica eterno
+        au.endsAt = Math.min(Math.max(au.endsAt, Date.now() + 2000), Date.now() + 6000);
         toca(sala);
       }
     }
