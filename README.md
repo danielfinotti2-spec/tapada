@@ -13,26 +13,27 @@ Leilão de futebol online para jogar com a galera: cada técnico recebe **R$ 100
 
 Todas funcionam no leilão online.
 
-## Rodar no seu PC (com online)
+## Jogar online com qualquer pessoa (de qualquer lugar)
 
-```bash
-node server.js
-```
+Duplo clique em **`JOGAR-ONLINE.bat`** (ou rode `node server.js`).
 
-Ou duplo clique em `ABRIR-TAPADA.bat`.
-
-O servidor sobe o site **e** o leilão, e mostra os endereços:
+O jogo vai abrir e, em alguns segundos, mostrar:
 
 ```
-Neste PC:      http://127.0.0.1:8080/
-Na sua rede:   http://192.168.x.x:8080/
+  ======================================================
+   LINK PARA JOGAR COM QUALQUER PESSOA (mande no grupo):
+   https://alguma-coisa-aqui.trycloudflare.com
+  ======================================================
 ```
 
-Mande o endereço "Na sua rede" para quem estiver no mesmo Wi-Fi: eles entram pela mesma sala.
+**Mande esse link no grupo.** Quem clicar entra direto na sua sala — de qualquer
+cidade, celular ou computador, sem instalar nada e sem abrir porta no roteador.
 
-> Para jogar com amigos em lugares diferentes, é preciso publicar o servidor
-> numa máquina com IP público (ou usar um túnel como ngrok/cloudflared).
+O link muda toda vez que você abre o jogo, então mande o novo a cada sessão.
+Ele funciona enquanto a janela do jogo estiver aberta.
 
+> Precisa do túnel: `winget install Cloudflare.cloudflared` (uma vez só).
+> Já instalado nesta máquina.
 ## Como funciona a sala
 
 1. Escolha a competição e crie a sala (2 a 16 técnicos, dá para completar com bots).

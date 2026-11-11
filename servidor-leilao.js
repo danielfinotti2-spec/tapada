@@ -538,8 +538,9 @@ setInterval(() => {
 
 // ---------- visão do estado ----------
 function visao(sala, pid) {
+  // o cliente sincroniza o relógio com now; se faltar vira NaN no cronômetro
   const m = acharManager(sala, pid);
-  return { ...sala, you: m ? m.seat : null };
+  return { ...sala, now: Date.now(), you: m ? m.seat : null };
 }
 
 module.exports = {

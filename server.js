@@ -209,6 +209,53 @@ servidor.on('error', err => {
   console.error('Não consegui subir o servidor:', err.message); process.exit(1);
 });
 
+// ---------- túnel público (jogar com gente de fora) ----------
+// Se existir o cloudflared, sobe um endereço público e mostra aqui. Assim
+// qualquer pessoa do mundo entra pelo link, sem abrir porta no roteador.
+function acharCloudflared() {
+  const cands = [
+    path.join(process.env.ProgramFiles || 'C:/Program Files', 'cloudflared', 'cloudflared.exe'),
+    path.join(process.env['ProgramFiles(x86)'] || 'C:/Program Files (x86)', 'cloudflared', 'cloudflared.exe'),
+    'cloudflared.exe', 'cloudflared'
+  ];
+  for (const c of cands) { try { if (c.includes('/') || c.includes('\\')) { if (fs.existsSync(c)) return c; } else return c; } catch (e) {} }
+  return null;
+}
+
+function abrirTunel(porta) {
+  if (process.env.TAPADA_SEM_TUNEL === '1') return;
+  const bin = acharCloudflared();
+  if (!bin) {
+    console.log('  Para jogar com gente de fora, instale o túnel:');
+    console.log('     winget install Cloudflare.cloudflared');
+    console.log('');
+    return;
+  }
+  console.log('  Criando endereço público (uns segundos)...');
+  const proc = require('child_process').spawn(bin, ['tunnel', '--url', 'http://127.0.0.1:' + porta, '--no-autoupdate'], {
+    stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true
+  });
+  let visto = false;
+  const ler = d => {
+    const t = d.toString();
+    const m = /https:\/\/[a-z0-9-]+\.trycloudflare\.com/i.exec(t);
+    if (m && !visto) {
+      visto = true;
+      console.log('');
+      console.log('  ======================================================');
+      console.log('   LINK PARA JOGAR COM QUALQUER PESSOA (mande no grupo):');
+      console.log('   ' + m[0]);
+      console.log('  ======================================================');
+      console.log('');
+    }
+  };
+  proc.stdout.on('data', ler);
+  proc.stderr.on('data', ler);
+  proc.on('exit', () => { if (!visto) console.log('  (túnel fechado)'); });
+  process.on('exit', () => { try { proc.kill(); } catch (e) {} });
+  setTimeout(() => { if (!visto) console.log('  (não consegui criar o link público; siga na rede local)'); }, 25000);
+}
+
 servidor.on('listening', () => {
   const redes = [];
   for (const [, addrs] of Object.entries(os.networkInterfaces())) {
@@ -222,6 +269,7 @@ servidor.on('listening', () => {
   console.log('  Ligas disponíveis no leilão: ' + Object.keys(leilao.ligas).length);
   console.log('  Para parar: feche esta janela ou Ctrl+C');
   console.log('');
+  abrirTunel(porta);
   if (process.env.TAPADA_NO_BROWSER !== '1') {
     const cmd = process.platform === 'win32' ? `start "" "http://127.0.0.1:${porta}/"` : `open "http://127.0.0.1:${porta}/"`;
     exec(cmd, () => {});
