@@ -31,6 +31,15 @@ function carregarLigas() {
       players: L.players || [], clubs: L.clubs || []
     };
   }
+  // Brasileirão e Kings League vêm do bundle do cliente (elencos-base.cjs)
+  try {
+    const base = require(path.join(ROOT, 'elencos-base.cjs'));
+    for (const [code, L] of Object.entries(base)) {
+      ligas[code] = { code, title: L.title, short: L.short, players: L.players, clubs: L.clubs };
+    }
+  } catch (e) {
+    console.warn('[leilão] elencos-base.cjs não encontrado:', e.message);
+  }
   return ligas;
 }
 
@@ -99,8 +108,9 @@ function toca(s) { s.v = ++seqV; s.at = Date.now(); }
 function novaSala(mode, opts, pid, nome) {
   const L = LIGAS[mode];
   if (!L) throw new Error('modo desconhecido');
-  // o cliente só conhece 5 e 11 em campo (7 é exclusivo da Kings League)
-  const size = Number(opts.size) === 11 ? 11 : 5;
+  // 5 ou 11 no Brasileirão/ligas; 7 é a Kings League
+  const pedido = Number(opts.size) || 5;
+  const size = mode === 'kl' ? 7 : (pedido === 11 ? 11 : 5);
   const code = CODIGO();
   const sala = {
     code, mode,
