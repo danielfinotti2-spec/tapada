@@ -1,0 +1,20 @@
+{
+  "name": "tapada",
+  "compatibility_date": "2025-01-01",
+  "main": "worker.js",
+  "assets": {
+    "directory": "public",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application"
+  },
+  "durable_objects": {
+    "bindings": [
+      { "name": "SALAS", "class_name": "Sala" },
+      { "name": "INDICE", "class_name": "Indice" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["Sala", "Indice"] }
+  ],
+  "observability": { "enabled": true }
+}

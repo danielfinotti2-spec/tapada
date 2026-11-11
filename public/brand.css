@@ -1,0 +1,312 @@
+/* ==========================================================================
+   TAPADA — tema azul "gelo" inspirado na foto + rebrand da marca.
+   Carregado DEPOIS de index.Ba6mq3x0.css, então basta redeclarar os tokens.
+   Paleta puxada da foto: brancos azulados (#eef5ff / #c8d8ec), azuis de gelo
+   (#b0d8f0 / #6aa8d8) e azuis reais profundos (#1a5fb4 / #0b3d91).
+   ========================================================================== */
+
+/* ---------- 1. Tokens: modo Futebol Brasileiro (claro) ==================== */
+:root,
+[data-mode=br] {
+  --bg: #f4f8fe;
+  --surface: #ffffff;
+  --dark: #0a2c63;
+  --deep: #0d3d80;
+  --pri: #1565d8;
+  --pri-ink: #ffffff;
+  --field-own: #1a6fd4;
+  --acc: #8fd3f7;
+  --acc-ink: #06284f;
+  --rival: #0a3f9e;
+  --rival-ink: #2b6fbf;
+  --ink: #0d2542;
+  --muted: #5b7594;
+  --line: #d5e3f6;
+  --pale: #eef4fd;
+  --tint: #dfeeff;
+  --ok: #a8e6ff;
+  --paper: #b8dcf7;
+  --paper-ink: #06284f;
+}
+
+/* ---------- 2. Kings League (claro) ====================================== */
+[data-mode=kl] {
+  --bg: #f0f6fd;
+  --surface: #ffffff;
+  --dark: #071d3f;
+  --deep: #0b2a5c;
+  --pri: #0b2a5c;
+  --pri-ink: #ffffff;
+  --field-own: #0b2a5c;
+  --acc: #7cc6f2;
+  --acc-ink: #061c3c;
+  --rival: #2265b5;
+  --rival-ink: #1d5daa;
+  --ink: #0c2244;
+  --muted: #64789a;
+  --line: #d7e4f4;
+  --pale: #eff5fc;
+  --tint: #e0ecfa;
+  --ok: #7dffc8;
+  --paper: #b8dcf7;
+  --paper-ink: #061c3c;
+}
+
+/* ---------- 3. Tema escuro =============================================== */
+[data-theme=dark] {
+  --bg: #06121f;
+  --surface: #0d2137;
+  --ink: #e7f1fb;
+  --muted: #8ba7c4;
+  --line: #1d3a58;
+  --pale: #102740;
+  --tint: #163352;
+  --deep: #d6e9ff;
+  --pri: #3f9bf3;
+  --pri-ink: #04182d;
+  --rival-ink: #8fbdf5;
+  --field-own: #1565c0;
+  --dark: #06121f;
+  --acc: #8fd3f7;
+  --acc-ink: #04182d;
+}
+
+[data-theme=dark][data-mode=kl] {
+  --bg: #05101c;
+  --surface: #0c1f34;
+  --ink: #eaf3fc;
+  --muted: #8aa5c0;
+  --line: #1c3551;
+  --pale: #0f2439;
+  --tint: #16314c;
+  --deep: #d6e9ff;
+  --pri: #58a9f0;
+  --pri-ink: #04182d;
+  --acc: #cfe6fb;
+  --acc-ink: #04182d;
+  --field-own: #14304e;
+  --rival-ink: #8fbdf5;
+}
+
+/* ---------- 4. Detalhes que eram verde/amarelo fixos ===================== */
+.mode-pick button { background: #1a6fd4; }
+.mode-pick button[data-pick=kl] { background: #0a2c63; }
+
+/* cartão do modo Kings League deixa de ser preto puro e vira azul-noite */
+.mode-card[data-mode=kl] { background: #0a2c63; }
+.mode-card[data-mode=kl] .faces-row .face { border-color: #0a2c63; }
+[data-theme=dark] .mode-card[data-mode=kl] { box-shadow: inset 0 0 0 1px #27476e; }
+
+/* botões "tinta" e barra de voltar: creme/amarelo -> azul claro (texto legível)
+   Sem redeclarar --paper-ink, que continua sendo o azul escuro dos títulos. */
+.btn.ink { color: #d6e9ff; }
+[data-theme=dark] .btn.ink,
+[data-theme=dark] .btn.ink-ghost {
+  background: var(--tint);
+  color: var(--ink);
+  border-color: var(--line);
+}
+[data-theme=dark] .btn.ink { background: var(--pri); color: var(--pri-ink); }
+.back-bar { color: #d6e9ff; }
+.back-bar .btn.ink { background: #d6e9ff; color: #0a2c63; }
+.back-bar .btn.ink-ghost { border-color: #d6e9ff73; color: #d6e9ff; }
+
+/* avisos "bot / ausente / fora": laranja -> azul de gelo */
+.pill.bot,
+.pill.away { background: #d9ecfd; color: #1b5b9c; }
+.field-slot.filled.off b,
+.sr-face b.off { background: #d9ecfd; color: #1b5b9c; }
+[data-theme=dark] .pill.bot,
+[data-theme=dark] .pill.away { background: #1c3d5e; color: #a6cdf2; }
+
+/* papel de seda / confete da nota vira estrela azul */
+.confetti .c4 { background: url(/img/tapada.jpg) center / cover !important; }
+.logo img { box-shadow: 0 0 0 1px #0a2c6340, 0 4px 10px #0b2d5e59; }
+
+/* marca d'água da seção "sobre": ondinhas verde -> azul */
+.about {
+  background-color: var(--pale);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='28' viewBox='0 0 160 28'%3E%3Cg fill='none' stroke='%230b3d80' stroke-opacity='.10'%3E%3Cpath d='M0 7c20-9 20 9 40 0s20 9 40 0 20 9 40 0 20 9 40 0'/%3E%3Cpath d='M0 14c20-9 20 9 40 0s20 9 40 0 20 9 40 0 20 9 40 0'/%3E%3Cpath d='M0 21c20-9 20 9 40 0s20 9 40 0 20 9 40 0 20 9 40 0'/%3E%3C/g%3E%3C/svg%3E");
+}
+/* no tema escuro a seção acompanha a paleta (antes ficava clara e o texto sumia) */
+[data-theme=dark] .about {
+  background-color: var(--bg);
+  background-image: none;
+}
+[data-theme=dark] .about,
+[data-theme=dark] .about h2,
+[data-theme=dark] .about p,
+[data-theme=dark] .about li,
+[data-theme=dark] .about summary,
+[data-theme=dark] .about strong {
+  color: var(--ink);
+}
+[data-theme=dark] .about-facts b { color: var(--pri); }
+[data-theme=dark] .about details {
+  background: var(--surface);
+  border-color: var(--line);
+}
+
+/* ---------- 5. Avatar de jogador sem foto (404 na origem) ================ */
+img.face {
+  background: linear-gradient(160deg, #cfe4fb, #9cc4ef);
+  color: transparent;
+}
+
+/* ---------- 6. Barra de endereço + selo do jogo ========================= */
+.site-bar { color: #1b4585 !important; }
+[data-theme=dark] .site-bar { color: #9dc2ea !important; }
+
+/* ---------- 7. Fundo da página com um toque de céu ======================= */
+body {
+  background-image:
+    radial-gradient(1100px 520px at 82% -8%, #cfe6fb 0%, transparent 62%),
+    radial-gradient(900px 460px at 8% 4%, #e4f1ff 0%, transparent 58%);
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+[data-theme=dark] body {
+  background-image:
+    radial-gradient(1100px 520px at 82% -8%, #10345a 0%, transparent 62%),
+    radial-gradient(900px 460px at 8% 4%, #0a2238 0%, transparent 58%);
+}
+
+/* ---------- 8. Logo TAPADA =============================================== */
+.logo .logo-tapada { display: inline-flex; align-items: baseline; gap: 0; }
+
+/* ---------- 9. Nota de R$ 100 sem fundo no herói ======================== */
+.hero-nota img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1371 / 768;
+  object-fit: contain;
+  border-radius: 0;
+}
+.hero-nota {
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  overflow: visible;
+  filter: drop-shadow(0 22px 32px rgba(10, 44, 99, 0.32));
+}
+/* o "brilho" diagonal era para a foto com moldura; sobre recorte não faz sentido */
+.hero-nota .shine { display: none; }
+
+/* ---------- 10. Fotos de jogador =========================================
+   - img.face com foto real: recorte encaixa no círculo
+   - img.face.sem-foto: já falhou; vira um avatar de silhueta em azul
+   - img.face.pendente: ainda carregando / falhou: fundo azul neutro (sem ícone
+     de imagem quebrada, porque a foto é desenhada como background)           */
+.face { object-fit: cover; object-position: top center; }
+
+/* As fotos recortadas (fundo removido) são quadradas 200x200 com o corpo já
+   centralizado: "cover" cortaria a cabeça nas telas pequenas, então usamos
+   "contain" sobre o fundo azul que o próprio layout já aplica. */
+img.face,
+.lot-photo img,
+.sr-face img {
+  object-fit: contain;
+  object-position: center bottom;
+}
+
+img.face.pendente {
+  background-image:
+    radial-gradient(circle at 50% 34%, #7fb2e8 0 22%, transparent 22.5%),
+    radial-gradient(ellipse 62% 46% at 50% 108%, #7fb2e8 0 60%, transparent 60.5%),
+    linear-gradient(160deg, #dcecfe, #b3d3f5);
+  background-repeat: no-repeat;
+}
+[data-theme=dark] img.face.pendente {
+  background-image:
+    radial-gradient(circle at 50% 34%, #4b82bd 0 22%, transparent 22.5%),
+    radial-gradient(ellipse 62% 46% at 50% 108%, #4b82bd 0 60%, transparent 60.5%),
+    linear-gradient(160deg, #16314c, #1d4368);
+}
+/* nota de R$100 com fundo transparente: flutua sobre o cartão */
+.paper-nota, .wait-nota {
+  filter: drop-shadow(0 14px 24px rgba(10, 44, 99, 0.28));
+}
+.foto-credito {
+  text-align: center;
+  padding: 10px 16px 18px;
+  font-size: 11px;
+  color: var(--muted);
+  background: var(--pale);
+}
+.foto-credito a { color: var(--pri); text-decoration: underline; text-underline-offset: 2px; }
+[data-theme=dark] .foto-credito { background: var(--surface); }
+
+/* ---------- 11. Herói no tema escuro ===================================
+   O título e o texto do herói usavam cor fixa escura (--paper-ink), que
+   sumia sobre o fundo escuro. Aqui eles seguem o token --ink. */
+.hero h1,
+.hero h1 span,
+.hero p {
+  color: var(--ink);
+}
+[data-theme=dark] .hero h1,
+[data-theme=dark] .hero h1 span,
+[data-theme=dark] .hero p {
+  color: var(--ink);
+  text-shadow: none;
+}
+
+
+/* ---------- Banco de reservas (dentro do elenco) ---------- */
+.banco-row {
+  margin-top: 10px;
+  padding: 10px 8px;
+  border-radius: 14px;
+  background: var(--pale);
+  border: 1px dashed var(--line);
+}
+.banco-head {
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.banco-head b { color: var(--pri); margin-left: 4px; }
+.banco-itens {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 4px;
+}
+.banco-itens button { display: grid; justify-items: center; gap: 2px; min-width: 0; }
+.banco-itens .sr-face b { background: var(--pri); color: var(--pri-ink); }
+.banco-itens small {
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  margin-top: 3px; font-size: 10.5px; font-weight: 700; color: var(--ink);
+}
+.banco-itens i { font-style: normal; font-size: 9px; font-weight: 700; letter-spacing: .06em; color: var(--muted); }
+.banco-vago { min-height: 46px; font-size: 10px; font-weight: 700; color: var(--muted); opacity: .7; }
+@media (max-width: 720px) { .banco-itens { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+/* ---------- Aviso de que o online não roda neste endereço ---------- */
+#tapada-aviso-servidor {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  z-index: 300;
+  display: grid;
+  gap: 6px;
+  max-width: min(620px, calc(100vw - 32px));
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: #0d3d80;
+  color: #eaf3ff;
+  font-size: 13px;
+  line-height: 1.45;
+  box-shadow: 0 18px 40px -18px #0b2d5ecc;
+}
+#tapada-aviso-servidor b { font-size: 14px; color: #fff; }
+#tapada-aviso-servidor code {
+  background: #ffffff1f;
+  padding: 1px 5px;
+  border-radius: 5px;
+  font-size: 12px;
+}
