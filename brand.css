@@ -284,3 +284,29 @@ img.face.pendente {
 .banco-itens i { font-style: normal; font-size: 9px; font-weight: 700; letter-spacing: .06em; color: var(--muted); }
 .banco-vago { min-height: 46px; font-size: 10px; font-weight: 700; color: var(--muted); opacity: .7; }
 @media (max-width: 720px) { .banco-itens { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+/* ---------- Aviso de que o online não roda neste endereço ---------- */
+#tapada-aviso-servidor {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  z-index: 300;
+  display: grid;
+  gap: 6px;
+  max-width: min(620px, calc(100vw - 32px));
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: #0d3d80;
+  color: #eaf3ff;
+  font-size: 13px;
+  line-height: 1.45;
+  box-shadow: 0 18px 40px -18px #0b2d5ecc;
+}
+#tapada-aviso-servidor b { font-size: 14px; color: #fff; }
+#tapada-aviso-servidor code {
+  background: #ffffff1f;
+  padding: 1px 5px;
+  border-radius: 5px;
+  font-size: 12px;
+}
