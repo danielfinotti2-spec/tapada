@@ -310,3 +310,42 @@ img.face.pendente {
   border-radius: 5px;
   font-size: 12px;
 }
+
+/* ---------- Redes do criador no rodapé ---------- */
+.foot {
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+}
+.foot-social {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 12.5px;
+}
+.foot-by {
+  color: var(--muted);
+  font-weight: 600;
+  margin-right: 2px;
+}
+.foot-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--pale);
+  color: var(--pri);
+  font-weight: 700;
+  text-decoration: none;
+  transition: transform .15s ease, background .15s ease, border-color .15s ease;
+}
+.foot-link:hover,
+.foot-link:focus-visible {
+  background: var(--tint);
+  border-color: var(--pri);
+  transform: translateY(-1px);
+}
+.foot-link:active { transform: translateY(0); }
